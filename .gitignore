@@ -2,3 +2,6 @@ bin
 src/build
 bdist
 testing-collect
+
+*.pyc
+__pycache__

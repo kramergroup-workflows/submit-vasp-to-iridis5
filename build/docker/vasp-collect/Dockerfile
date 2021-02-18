@@ -30,10 +30,6 @@ ENV HOSTNAME "iridis5_a.soton.ac.uk"
 # Common base folder for all jobs
 ENV BASEDIR "workflows"
 
-# The JOB_NAME will be used to identify the calculation
-# in the queue
-ENV JOB_NAME "vasp"
-
 # Job files will be removed after collection from the host
 # if REMOVE is set to 'yes'
 ENV REMOVE "yes"

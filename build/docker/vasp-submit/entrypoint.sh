@@ -17,6 +17,8 @@ fi
 # subpath containing the VASP input files
 SUBPATH=$1
 
+# Allow to override the jobname, but use the sub-path as default
+export JOB_NAME=${JOB_NAME:-$SUBPATH}
 
 # Calculate number of nodes (TODO This should be smarter )
 export NUM_NODES=1
@@ -24,13 +26,16 @@ export NUM_NODES=1
 # Define the job directory - this is cluster dependent as 
 # different clusters have different layouts - as a fallback
 # we use a subfolder of the $HOME directory
-JOBDIR="~/$BASEDIR/$JOB_NAME"
+export JOBDIR="~/$BASEDIR/$JOB_NAME"
 case $CLUSTER in 
 iridis5) 
-  JOBDIR="/scratch/$USERNAME/$BASEDIR/$JOB_NAME"
+  export JOBDIR="/scratch/$USERNAME/$BASEDIR/$JOB_NAME"
+  ;;
+michael) 
+  export JOBDIR="/home/$USERNAME/Scratch/$BASEDIR/$JOB_NAME"
   ;;
 thomas)
-  JOBDIR="/home/$USERNAME/scratch/$BASEDIR/$JOB_NAME"
+  export JOBDIR="/home/$USERNAME/scratch/$BASEDIR/$JOB_NAME"
   ;;
 esac
 
@@ -45,10 +50,13 @@ iridis5)
 thomas)
   SUBMIT="qsub"
   ;;
+michael)
+  SUBMIT="qsub"
+  ;;
 esac
 
 # Create a submit script and make sure it's executable
-cat /assets/qscript.$CLUSTER | envsubst '$NUM_NODES $JOB_NAME $JOB_EMAIL $JOB_TYPE $WALLTIME $JOBDIR' > /data/vasp/$SUBPATH/qscript
+cat /assets/qscript.$CLUSTER | envsubst '$NUM_NODES $JOB_NAME $JOB_EMAIL $JOB_TYPE $WALLTIME $JOBDIR $ALLOCATION $VASP' > /data/vasp/$SUBPATH/qscript
 chmod u+x /data/vasp/$SUBPATH/qscript
 
 # Make sure the scratch directory exists
@@ -58,7 +66,7 @@ ssh -i /ssh/id_rsa -oStrictHostKeyChecking=no $USERNAME@$HOSTNAME "mkdir -p $JOB
 
 # Copy the input files
 # We pipe this through a tar command because it allows to write files to a folder without wildcards (which are problematic in scp)
-echo "Copying VASP input files"
+echo "Copying VASP input files to $JOBDIR"
 cd /data/vasp/$SUBPATH
 tar czf - -C /data/vasp/$SUBPATH * | ssh -i /ssh/id_rsa -oStrictHostKeyChecking=no $USERNAME@$HOSTNAME "( cd $JOBDIR; tar xzf - )"
 
@@ -67,9 +75,12 @@ scp -i /ssh/id_rsa -oStrictHostKeyChecking=no /assets/vasp-driver.pyz $USERNAME@
 
 # Copy vasp
 #scp -i /ssh/id_rsa -oStrictHostKeyChecking=no /assets/$VASP $USERNAME@$HOSTNAME:/scratch/$USERNAME/$BASEDIR/$JOB_NAME/vasp
-echo "Copying VASP executable"
-cd /assets/$CLUSTER
-tar czf - -C /assets/$CLUSTER $VASP | ssh -i /ssh/id_rsa -oStrictHostKeyChecking=no $USERNAME@$HOSTNAME "( cd $JOBDIR ; tar xzf - ; mv $VASP vasp )"
+if [ -e /assets/$CLUSTER ];
+then
+  echo "Copying VASP executable"
+  cd /assets/$CLUSTER
+  tar czf - -C /assets/$CLUSTER $VASP | ssh -i /ssh/id_rsa -oStrictHostKeyChecking=no $USERNAME@$HOSTNAME "( cd $JOBDIR ; tar xzf - ; mv $VASP vasp )"
+fi
 
 # Submit job
 ssh -i /ssh/id_rsa -oStrictHostKeyChecking=no $USERNAME@$HOSTNAME "cd $JOBDIR && $SUBMIT qscript"

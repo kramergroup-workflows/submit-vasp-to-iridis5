@@ -1,0 +1,20 @@
+#!/bin/bash -l
+#$ -S /bin/bash
+#$ -l h_rt=$WALLTIME
+#$ -N $JOB_NAME
+#$ -wd $JOBDIR
+
+#Select the MPI parallel environment and 40 processes.
+#$ -pe mpi 40
+#$ -ac allow=A
+
+#add to Faraday_MSM
+#$ -P Gold
+#$ -A $ALLOCATION
+
+# loaded modules
+module load gerun compilers/intel/2018/update3 mpi/intel/2018/update3/intel gcc-libs/4.9.2 python3
+
+export PATH=$(pwd):$PATH
+python3 vasp-driver.pyz $JOB_TYPE --command "gerun $VASP" $JOBDIR
+
