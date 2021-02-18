@@ -52,6 +52,15 @@ This will:
 You can compile another Docker container to collect results back
 
 ```bash
-docker build -t vasp-collect -f build/docker/vasp-collect/Dockerfile . 
+docker build -t vasp-collect -f build/docker/vasp-collect/Dockerfile .
+docker run --rm -it -v "$(pwd):/data/vasp" -v "$HOME/.ssh/my_rsa:/ssh/id_rsa" -e CLUSTER=my-cluster -e HOSTNAME=dns-name-of-cluster -e USERNAME=my-username vasp-collect testing
+```
+
+### Using aliases
+
+It is highly recommended to use Aliases for the various docker commands. How you define these, depends on your operating system and shell capabilities. Here an example that could go into a `~/.bashrc` file:
+
+```bash
+alias vasp-submit='docker run --rm -it -v "$(pwd):/data/vasp" -v "$HOME/.ssh/my_rsa:/ssh/id_rsa" -e CLUSTER=my-cluster -e HOSTNAME=dns-name-of-cluster -e USERNAME=my-username -e ALLOCATION=my-allocation vasp-submit'
 ```
 
